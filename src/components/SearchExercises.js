@@ -1,22 +1,52 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Button, Stack, TextField, Typography } from '@mui/material';
 
+import { exerciseOptions, fetchData } from '../utils/fetchData';
+import HorizontalScrollbar from './HorizontalScrollbar';
 
-const SearchExercises = () => {
+const SearchExercises = ({ setExercises, bodyPart, setBodyPart }) => {
   const [search, setSearch] = useState('');
-  
+  const [bodyParts, setBodyParts] = useState([]);
+
+
+  useEffect(() => {
+    const fetchExercisesData = async () => {
+      try {
+        const bodyPartsData = await fetchData('https://exercisedb.p.rapidapi.com/exercises/bodyPartList', exerciseOptions);
+
+        // Check if bodyPartsData is an array, if not, convert it to an array of values
+        const bodyPartsArray = Array.isArray(bodyPartsData)
+          ? bodyPartsData
+          : Object.values(bodyPartsData);
+
+        setBodyParts(['all', ...bodyPartsArray]);
+      } catch (error) {
+        console.error('Error fetching body parts data:', error);
+      }
+    };
+
+    fetchExercisesData();
+  }, []);
+
   const handleSearch = async () => {
     if (search) {
-      // const exercisesData = await fetchData('https://exercisedb.p.rapidapi.com/exercises', exerciseOptions);
+      try {
+        const exercisesData = await fetchData('https://exercisedb.p.rapidapi.com/exercises', exerciseOptions);
 
-      // const searchedExercises = exercisesData.filter(
-      //   (item) => item.name.toLowerCase().includes(search)
-      //          || item.target.toLowerCase().includes(search)
-      //          || item.equipment.toLowerCase().includes(search)
-      //          || item.bodyPart.toLowerCase().includes(search),
-      // );
+        const searchedExercises = exercisesData.filter(
+          (exercise) => exercise.name.toLowerCase().includes(search)
+            || exercise.target.toLowerCase().includes(search)
+            || exercise.equipment.toLowerCase().includes(search)
+            || exercise.bodyPart.toLowerCase().includes(search),
+        );
+
+        setSearch('');
+        setExercises(searchedExercises);
+      } catch (error) {
+        console.error('Error fetching exercises data:', error);
+      }
     }
-  }
+  };
 
   return (
     <Stack alignItems="center" mt="37px" justifyContent="center" p="20px">
@@ -51,7 +81,10 @@ const SearchExercises = () => {
             Search
         </Button>
       </Box>
+      <Box sx={{ position: 'relative', width: '100%', p: '20px' }}>
+      <HorizontalScrollbar data={bodyParts} bodyPart={bodyPart} setBodyPart={setBodyPart} />
+      </Box>
     </Stack>
   );
-};
+}
 export default SearchExercises;
